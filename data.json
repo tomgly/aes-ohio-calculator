@@ -119,7 +119,7 @@
     {
       "id": "heating",
       "label": "Residential Heating",
-      "description": "Residential service with electric heating. Winter rates apply Nov 1 – May 31.",
+      "description": "Residential service with electric heating. Winter rates apply Nov 1 - May 31.",
       "sor_key": "sor_non_heating",
       "sor_winter_key": "sor_heating_winter",
       "seasonal": true

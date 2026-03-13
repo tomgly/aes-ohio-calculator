@@ -1,8 +1,8 @@
 'use strict';
 
 /* ── State ─────────────────────────────────────────────────────────── */
-let DATA   = null;   // loaded from data.json
-let plan   = 'non_heating';
+let DATA   = null; // loaded from data.json
+let plan   = 'heating';
 let usage  = 1000;
 let season = 'summer';
 
@@ -71,9 +71,7 @@ function calculate(kwh, planId, billSeason) {
 
   /* Supply */
   const isWinter = (planId === 'heating' && billSeason === 'winter');
-  const sor_rate = isWinter
-    ? r.supply.sor_heating_winter.value
-    : r.supply.sor_non_heating.value;
+  const sor_rate = isWinter ? r.supply.sor_heating_winter.value : r.supply.sor_non_heating.value;
 
   const supply = sor_rate * kwh;
   const total  = delivery_total + supply;
