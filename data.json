@@ -35,14 +35,14 @@
         "section": "Other Delivery Charges"
       },
       "excise_tax_tier1": {
-        "label": "Excise Tax (0–2,000 kWh)",
+        "label": "Excise Tax (0-2,000 kWh)",
         "value": 0.00465,
         "unit": "per kWh",
         "threshold": 2000,
         "section": "Other Delivery Charges"
       },
       "excise_tax_tier2": {
-        "label": "Excise Tax (2,001–15,000 kWh)",
+        "label": "Excise Tax (2,001-15,000 kWh)",
         "value": 0.00419,
         "unit": "per kWh",
         "threshold": 15000,
@@ -61,7 +61,7 @@
         "section": "Other Delivery Charges"
       },
       "tcrr_n": {
-        "label": "Transmission Cost Recovery Rider – N",
+        "label": "Transmission Cost Recovery Rider - N",
         "value": 0.0150056,
         "unit": "per kWh",
         "section": "Other Delivery Charges"
@@ -128,11 +128,11 @@
 
   "seasons": {
     "summer": {
-      "label": "Summer (Jun 1 – Oct 31)",
+      "label": "Summer (Jun 1 - Oct 31)",
       "months": [6,7,8,9,10]
     },
     "winter": {
-      "label": "Winter (Nov 1 – May 31)",
+      "label": "Winter (Nov 1 - May 31)",
       "months": [11,12,1,2,3,4,5]
     }
   },
