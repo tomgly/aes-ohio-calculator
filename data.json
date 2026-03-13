@@ -1,0 +1,146 @@
+{
+  "_meta": {
+    "title": "AES Ohio Residential Rate Data",
+    "effective_date": "2025-12-30",
+    "supplier": "AES Ohio",
+    "pipp": false,
+    "source": "Res-Website-Calculator-1-1-2026.xlsx"
+  },
+
+  "rates": {
+    "delivery": {
+      "customer_charge": {
+        "label": "Customer Charge",
+        "value": 9.75,
+        "unit": "per bill",
+        "section": "AES Ohio Delivery Charges"
+      },
+      "distribution_energy": {
+        "label": "Distribution Charge",
+        "value": 0.049318,
+        "unit": "per kWh",
+        "section": "Other Delivery Charges"
+      },
+      "usf_rider": {
+        "label": "PIPP Rider",
+        "value": 0.0032369,
+        "unit": "per kWh",
+        "section": "Other Delivery Charges",
+        "note": "Previously named the USF Rider"
+      },
+      "storm_rider": {
+        "label": "Storm Rider",
+        "value": 0.15,
+        "unit": "per bill",
+        "section": "Other Delivery Charges"
+      },
+      "excise_tax_tier1": {
+        "label": "Excise Tax (0–2,000 kWh)",
+        "value": 0.00465,
+        "unit": "per kWh",
+        "threshold": 2000,
+        "section": "Other Delivery Charges"
+      },
+      "excise_tax_tier2": {
+        "label": "Excise Tax (2,001–15,000 kWh)",
+        "value": 0.00419,
+        "unit": "per kWh",
+        "threshold": 15000,
+        "section": "Other Delivery Charges"
+      },
+      "excise_tax_tier3": {
+        "label": "Excise Tax (over 15,000 kWh)",
+        "value": 0.00363,
+        "unit": "per kWh",
+        "section": "Other Delivery Charges"
+      },
+      "infrastructure_rider": {
+        "label": "Infrastructure Investment Rider",
+        "value": 0.07421,
+        "unit": "% of Base Distribution",
+        "section": "Other Delivery Charges"
+      },
+      "tcrr_n": {
+        "label": "Transmission Cost Recovery Rider – N",
+        "value": 0.0150056,
+        "unit": "per kWh",
+        "section": "Other Delivery Charges"
+      },
+      "tax_savings_credit": {
+        "label": "Tax Savings Credit Rider",
+        "value": 0.025675,
+        "unit": "% of Base Distribution",
+        "section": "Other Delivery Charges",
+        "note": "Shown as a positive line item on bill"
+      },
+      "proactive_reliability": {
+        "label": "Proactive Reliability Optimization Rider",
+        "value": 2.07,
+        "unit": "per bill",
+        "section": "Other Delivery Charges"
+      },
+      "distribution_investment": {
+        "label": "Distribution Investment Rider",
+        "value": 0.031186,
+        "unit": "% of Base Distribution",
+        "section": "Other Delivery Charges"
+      },
+      "regulatory_compliance": {
+        "label": "Regulatory Compliance Rider",
+        "value": 0.0282,
+        "unit": "% of Base Distribution",
+        "section": "Other Delivery Charges"
+      }
+    },
+    "supply": {
+      "sor_non_heating": {
+        "label": "Standard Offer Rate",
+        "value": 0.0945004,
+        "unit": "per kWh",
+        "applies_to": "Residential Non-Heating, Residential Heating (Summer)"
+      },
+      "sor_heating_winter": {
+        "label": "Standard Offer Rate (Winter)",
+        "value": 0.0799587,
+        "unit": "per kWh",
+        "applies_to": "Residential Heating (Winter only)"
+      }
+    }
+  },
+
+  "plans": [
+    {
+      "id": "non_heating",
+      "label": "Residential Non-Heating",
+      "description": "Standard residential service without electric heating.",
+      "sor_key": "sor_non_heating",
+      "seasonal": false
+    },
+    {
+      "id": "heating",
+      "label": "Residential Heating",
+      "description": "Residential service with electric heating. Winter rates apply Nov 1 – May 31.",
+      "sor_key": "sor_non_heating",
+      "sor_winter_key": "sor_heating_winter",
+      "seasonal": true
+    }
+  ],
+
+  "seasons": {
+    "summer": {
+      "label": "Summer (Jun 1 – Oct 31)",
+      "months": [6,7,8,9,10]
+    },
+    "winter": {
+      "label": "Winter (Nov 1 – May 31)",
+      "months": [11,12,1,2,3,4,5]
+    }
+  },
+
+  "bill_layout": {
+    "delivery_section": "AES Ohio Delivery Charges",
+    "supply_section": "Supply Charges",
+    "ptc_label": "Price-To-Compare for this bill",
+    "disclaimer": "AES Ohio rates change frequently. This calculator contains current rates and is only to be used for your current bill. Please check back periodically for the most current information. Budget bill, PIPP, and pay agreements are not reflected in this tool."
+  }
+}
