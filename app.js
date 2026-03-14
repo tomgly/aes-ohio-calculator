@@ -164,7 +164,7 @@ function readURL() {
   // URL params take priority over everything
   if (p.has('plan')   && ['non_heating','heating'].includes(p.get('plan')))   plan   = p.get('plan');
   if (p.has('season') && ['summer','winter'].includes(p.get('season')))       season = p.get('season');
-  if (p.has('usage')  && !isNaN(+p.get('usage')))                             usage  = Math.max(0, +p.get('usage'));
+  if (p.has('usage')  && !isNaN(+p.get('usage')))                             usage  = Math.min(10000, Math.max(0, +p.get('usage')));
 }
 
 function hasURLParams() {
@@ -292,7 +292,7 @@ function initUI() {
   usageSlider.value = Math.min(usage, +usageSlider.max);
 
   usageInput.addEventListener('input', () => {
-    usage = Math.max(0, parseInt(usageInput.value, 10) || 0);
+    usage = Math.min(10000, Math.max(0, parseInt(usageInput.value, 10) || 0));
     usageSlider.value = Math.min(usage, +usageSlider.max);
     update();
   });
@@ -313,23 +313,32 @@ function initUI() {
     url.searchParams.set('season', season);
     url.searchParams.set('usage',  usage);
 
-    const copy = str => {
-      if (navigator.clipboard) {
-        return navigator.clipboard.writeText(str);
-      }
+    const urlStr = url.toString();
+
+    const fallbackCopy = str => {
       const ta = document.createElement('textarea');
       ta.value = str;
+      ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
       document.body.appendChild(ta);
+      ta.focus();
       ta.select();
-      document.execCommand('copy');
+      try { document.execCommand('copy'); } catch(_) {}
       document.body.removeChild(ta);
-      return Promise.resolve();
     };
 
-    copy(url.toString()).then(() => {
-      shareToast.textContent = 'Link copied!';
+    const showToast = msg => {
+      shareToast.textContent = msg;
       setTimeout(() => { shareToast.textContent = ''; }, 2500);
-    });
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(urlStr)
+        .then(() => showToast('Link copied!'))
+        .catch(() => { fallbackCopy(urlStr); showToast('Link copied!'); });
+    } else {
+      fallbackCopy(urlStr);
+      showToast('Link copied!');
+    }
   });
 
   /* Export */
