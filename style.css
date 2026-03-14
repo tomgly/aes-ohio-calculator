@@ -501,10 +501,11 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding: 5px 0;
   border-bottom: 1px solid var(--border-soft);
   transition: background var(--trans);
+  min-width: 0;
 }
 
 .bill-line:last-of-type { border-bottom: none; }
@@ -517,6 +518,8 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-2);
   flex: 1;
   min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .line-note {
@@ -538,8 +541,10 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 500;
   color: var(--text);
   white-space: nowrap;
-  min-width: 64px;
+  min-width: 56px;
+  max-width: 80px;
   text-align: right;
+  flex-shrink: 0;
 }
 
 /* Subtotals */
@@ -613,6 +618,12 @@ input[type="range"]::-moz-range-thumb {
   gap: 12px;
 }
 
+@media (max-width: 400px) {
+  .ptc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ptc-item {
   display: flex;
   flex-direction: column;
@@ -629,16 +640,18 @@ input[type="range"]::-moz-range-thumb {
 
 .ptc-dollars {
   font-family: var(--mono);
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text);
+  word-break: break-all;
 }
 
 .ptc-rate {
   font-family: var(--mono);
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--green);
+  word-break: break-all;
 }
 
 .ptc-sublabel {
@@ -664,6 +677,42 @@ input[type="range"]::-moz-range-thumb {
   border-left: 3px solid var(--border);
 }
 
+/* Privacy note */
+.privacy-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .72rem;
+  color: var(--text-3);
+  background: var(--surface-alt);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xs);
+  padding: 8px 10px;
+  margin-top: 14px;
+  line-height: 1.4;
+}
+
+.privacy-note svg {
+  width: 13px; height: 13px;
+  flex-shrink: 0;
+  color: var(--green);
+  opacity: .8;
+}
+
+/* ── Mobile tweaks ────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .layout { padding: 16px 12px 40px; gap: 14px; }
+  .panel  { padding: 18px 14px; }
+  .total-amount { font-size: 2.1rem; }
+  .bill-subtotal { font-size: .78rem; padding: 6px 8px; }
+  .bill-grand-total { font-size: .92rem; padding: 10px 12px; }
+  .ptc-box { padding: 12px; }
+  .ptc-rate { font-size: 1.05rem; }
+  .ptc-dollars { font-size: 1rem; }
+  .line-amount { font-size: .82rem; }
+  .line-label  { font-size: .8rem; }
+}
+
 /* ── Print / PDF ──────────────────────────────────────────────────── */
 .print-area { display: none; }
 
@@ -675,8 +724,13 @@ input[type="range"]::-moz-range-thumb {
 
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-  body, .layout, .site-header, .panel-input,
-  .panel-breakdown, .export-btn, .share-group { display: none !important; }
+  /* Hide all screen UI — show only print-area */
+  .site-header,
+  .layout,
+  .panel-input,
+  .panel-breakdown,
+  .export-btn,
+  .share-group { display: none !important; }
 
   .print-area {
     display: block !important;
