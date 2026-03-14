@@ -668,37 +668,74 @@ input[type="range"]::-moz-range-thumb {
 .print-area { display: none; }
 
 @media print {
+  @page {
+    size: letter portrait;
+    margin: 0.75in 0.75in 0.75in 0.75in;
+  }
+
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-  body { background: #fff !important; color: #000 !important; }
-
-  .site-header,
-  .panel-input,
-  .export-btn,
-  .share-group { display: none !important; }
-
-  .layout { display: block; padding: 0; }
-  .panel-breakdown { box-shadow: none; border: 1px solid #ddd; }
+  body, .layout, .site-header, .panel-input,
+  .panel-breakdown, .export-btn, .share-group { display: none !important; }
 
   .print-area {
     display: block !important;
-    page-break-before: always;
-    padding: 20px;
-    font-family: sans-serif;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 10pt;
+    color: #000;
+    width: 100%;
   }
 
-  .print-header { border-bottom: 2px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 16px; }
-  .print-logo { font-size: 1.2rem; font-weight: 700; color: #1d4ed8; }
-  .print-date { font-size: .8rem; color: #666; margin-top: 4px; }
-  .print-meta { font-size: .9rem; color: #444; margin-bottom: 16px; }
-  .print-body table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2pt solid #1d4ed8;
+    padding-bottom: 8pt;
+    margin-bottom: 12pt;
+  }
+
+  .print-logo { font-size: 14pt; font-weight: 700; color: #1d4ed8; }
+  .print-date { font-size: 8pt; color: #555; }
+
+  .print-meta {
+    font-size: 9pt;
+    color: #333;
+    margin-bottom: 12pt;
+    padding: 6pt 8pt;
+    background: #f3f4f6;
+    border-radius: 3pt;
+  }
+
+  .print-body table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    page-break-inside: avoid;
+  }
+
   .print-body th,
-  .print-body td { padding: 6px 10px; border: 1px solid #e5e7eb; text-align: left; }
-  .print-body th { background: #f3f4f6; font-weight: 600; }
-  .print-body tr.subtotal { background: #eff6ff; font-weight: 600; }
-  .print-body tr.total   { background: #1d4ed8; color: #fff; font-weight: 700; font-size: .95rem; }
-  .print-body tr.ptc     { background: #ecfdf5; }
-  .print-disclaimer { margin-top: 20px; font-size: .72rem; color: #666; font-style: italic; }
+  .print-body td {
+    padding: 5pt 8pt;
+    border: 0.5pt solid #d1d5db;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .print-body thead tr th { background: #e8edf8; font-weight: 700; font-size: 8.5pt; }
+  .print-body tr.subtotal  { background: #dbeafe; font-weight: 700; }
+  .print-body tr.total     { background: #1d4ed8; color: #fff; font-weight: 700; font-size: 10pt; }
+  .print-body tr.ptc       { background: #d1fae5; }
+
+  .print-disclaimer {
+    margin-top: 14pt;
+    font-size: 7.5pt;
+    color: #666;
+    font-style: italic;
+    border-top: 0.5pt solid #d1d5db;
+    padding-top: 8pt;
+    line-height: 1.5;
+  }
 }
 
 /* ── Misc animations ──────────────────────────────────────────────── */

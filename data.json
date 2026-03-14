@@ -89,7 +89,15 @@
         "label": "Regulatory Compliance Rider",
         "value": 0.0282,
         "unit": "% of Base Distribution",
-        "section": "Other Delivery Charges"
+        "section": "Other Delivery Charges",
+        "note": "Residential Non-Heating rate"
+      },
+      "regulatory_compliance_heat": {
+        "label": "Regulatory Compliance Rider",
+        "value": 0.0196,
+        "unit": "% of Base Distribution",
+        "section": "Other Delivery Charges",
+        "note": "Residential Heating rate (differs from Non-Heating)"
       }
     },
     "supply": {
@@ -103,7 +111,7 @@
         "label": "Standard Offer Rate (Winter)",
         "value": 0.0799587,
         "unit": "per kWh",
-        "applies_to": "Residential Heating (Winter only)"
+        "applies_to": "Residential Heating (Winter only, Nov 1 - May 31)"
       }
     }
   },
@@ -113,6 +121,7 @@
       "id": "non_heating",
       "label": "Residential Non-Heating",
       "description": "Standard residential service without electric heating.",
+      "regulatory_compliance_key": "regulatory_compliance",
       "sor_key": "sor_non_heating",
       "seasonal": false
     },
@@ -120,6 +129,7 @@
       "id": "heating",
       "label": "Residential Heating",
       "description": "Residential service with electric heating. Winter rates apply Nov 1 - May 31.",
+      "regulatory_compliance_key": "regulatory_compliance_heat",
       "sor_key": "sor_non_heating",
       "sor_winter_key": "sor_heating_winter",
       "seasonal": true

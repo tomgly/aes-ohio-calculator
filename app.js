@@ -1,57 +1,69 @@
 'use strict';
 
-/* ── State ─────────────────────────────────────────────────────────── */
+/* ── Defaults ────────────────────────────────────────────────────── */
 let DATA   = null; // loaded from data.json
 let plan   = 'heating';
 let usage  = 1000;
-let season = 'summer';
+let season = currentSeasonFromDate();
 
-/* ── Helpers ────────────────────────────────────────────────────────── */
-const $ = id => document.getElementById(id);
-const fmt = n => '$' + Math.abs(n).toFixed(2);
-const fmtRate = n => '$' + n.toFixed(7).replace(/0+$/, '').replace(/\.$/, '');
+/* ── Season from real date ──────────────────────────────────────── */
+function currentSeasonFromDate() {
+  const m = new Date().getMonth() + 1;
+  return [11, 12, 1, 2, 3, 4, 5].includes(m) ? 'winter' : 'summer';
+}
+
+/* ── Helpers ────────────────────────────────────────────────────── */
+const $   = id => document.getElementById(id);
+const fmt = n  => '$' + n.toFixed(2);
 
 function set(id, val) {
   const el = $(id);
   if (el) el.textContent = val;
 }
 
-/* ── Core calculation ────────────────────────────────────────────────── */
+/* ── Core calculation ───────────────────────────────────────────── */
 function calculate(kwh, planId, billSeason) {
   const r = DATA.rates;
   const d = r.delivery;
+
+  // Pick plan-specific regulatory compliance rate
+  const regRateKey = planId === 'heating'
+    ? 'regulatory_compliance_heat'
+    : 'regulatory_compliance';
 
   /* Base Distribution */
   const customer_charge   = d.customer_charge.value;
   const distribution      = d.distribution_energy.value * kwh;
   const base_dist_revenue = customer_charge + distribution;
 
-  /* Fixed-per-bill charges */
-  const storm_rider      = d.storm_rider.value;
-  const proactive_rider  = d.proactive_reliability.value;
+  /* Fixed per-bill */
+  const storm_rider     = d.storm_rider.value;
+  const proactive_rider = d.proactive_reliability.value;
 
-  /* Energy-based charges */
+  /* Energy-based */
   const usf_rider = d.usf_rider.value * kwh;
   const tcrr_n    = d.tcrr_n.value * kwh;
 
   // Tiered excise tax
   let excise = 0;
-  if (kwh <= d.excise_tax_tier1.threshold) {
+  const t1 = d.excise_tax_tier1.threshold;
+  const t2 = d.excise_tax_tier2.threshold;
+  if (kwh <= t1) {
     excise = d.excise_tax_tier1.value * kwh;
-  } else if (kwh <= d.excise_tax_tier2.threshold) {
-    excise  = d.excise_tax_tier1.value * d.excise_tax_tier1.threshold;
-    excise += d.excise_tax_tier2.value * (kwh - d.excise_tax_tier1.threshold);
+  } else if (kwh <= t2) {
+    excise  = d.excise_tax_tier1.value * t1;
+    excise += d.excise_tax_tier2.value * (kwh - t1);
   } else {
-    excise  = d.excise_tax_tier1.value * d.excise_tax_tier1.threshold;
-    excise += d.excise_tax_tier2.value * (d.excise_tax_tier2.threshold - d.excise_tax_tier1.threshold);
-    excise += d.excise_tax_tier3.value * (kwh - d.excise_tax_tier2.threshold);
+    excise  = d.excise_tax_tier1.value * t1;
+    excise += d.excise_tax_tier2.value * (t2 - t1);
+    excise += d.excise_tax_tier3.value * (kwh - t2);
   }
 
-  /* Percentage-of-Base-Distribution riders */
+  /* % of Base Distribution riders */
   const infra_rider       = base_dist_revenue * d.infrastructure_rider.value;
   const tax_savings_cr    = base_dist_revenue * d.tax_savings_credit.value;
   const dist_invest_rider = base_dist_revenue * d.distribution_investment.value;
-  const reg_compliance    = base_dist_revenue * d.regulatory_compliance.value;
+  const reg_compliance    = base_dist_revenue * d[regRateKey].value;
 
   /* Other Delivery subtotal */
   const other_delivery = (
@@ -71,7 +83,9 @@ function calculate(kwh, planId, billSeason) {
 
   /* Supply */
   const isWinter = (planId === 'heating' && billSeason === 'winter');
-  const sor_rate = isWinter ? r.supply.sor_heating_winter.value : r.supply.sor_non_heating.value;
+  const sor_rate = isWinter
+    ? r.supply.sor_heating_winter.value
+    : r.supply.sor_non_heating.value;
 
   const supply = sor_rate * kwh;
   const total  = delivery_total + supply;
@@ -87,9 +101,14 @@ function calculate(kwh, planId, billSeason) {
   };
 }
 
-/* ── Render breakdown ────────────────────────────────────────────────── */
+/* ── Compact rate string ─────────────────────────────────────────── */
+function fmtRate(rate) {
+  let s = rate.toFixed(7).replace(/0+$/, '').replace(/\.$/, '');
+  return `($${s}/kWh)`;
+}
+
+/* ── Render breakdown ────────────────────────────────────────────── */
 function render(b, kwh, planId, billSeason) {
-  /* Line items */
   set('l_customer_charge',  fmt(b.customer_charge));
   set('l_distribution',     fmt(b.distribution));
   set('l_usf',              fmt(b.usf_rider));
@@ -104,18 +123,17 @@ function render(b, kwh, planId, billSeason) {
   set('l_other_delivery',   fmt(b.other_delivery));
   set('l_delivery_total',   fmt(b.delivery_total));
 
-  /* Supply */
-  const sorLabel = `($${b.sor_rate.toFixed(7).replace(/0+$/,'').replace(/\.$/,'')} /kWh)`;
-  set('l_sor_rate',     sorLabel);
+  set('l_sor_rate',     fmtRate(b.sor_rate));
   set('l_supply',       fmt(b.supply));
   set('l_supply_total', fmt(b.supply));
   set('l_grand_total',  fmt(b.total));
 
-  /* PTC */
+  // PTC
+  const ptcStr = '$' + b.ptc.toFixed(7).replace(/0+$/, '').replace(/\.$/, '') + '/kWh';
   set('ptc_dollars', fmt(b.supply));
-  set('ptc_rate',    '$' + b.ptc.toFixed(6).replace(/0+$/,'').replace(/\.$/,'') + '/kWh');
+  set('ptc_rate',    ptcStr);
 
-  /* Total card */
+  // Total card
   const totalEl = $('totalAmount');
   totalEl.textContent = fmt(b.total);
   totalEl.classList.remove('bump');
@@ -128,23 +146,33 @@ function render(b, kwh, planId, billSeason) {
   set('totalMeta', `${kwh.toLocaleString()} kWh · ${planLabel}`);
 }
 
-/* ── Sync URL ────────────────────────────────────────────────────────── */
+/* ── URL sync  ───────────────────────────────────────────────────── */
 function syncURL() {
   const url = new URL(location.href);
+  // Clear and re-set in desired order
+  url.searchParams.delete('plan');
+  url.searchParams.delete('season');
+  url.searchParams.delete('usage');
   url.searchParams.set('plan',   plan);
-  url.searchParams.set('usage',  usage);
   url.searchParams.set('season', season);
+  url.searchParams.set('usage',  usage);
   history.replaceState(null, '', url.toString());
 }
 
 function readURL() {
   const p = new URLSearchParams(location.search);
-  if (p.get('plan')  && ['non_heating','heating'].includes(p.get('plan')))  plan  = p.get('plan');
-  if (p.get('usage') && !isNaN(+p.get('usage')))                            usage = Math.max(0, +p.get('usage'));
-  if (p.get('season')&& ['summer','winter'].includes(p.get('season')))     season = p.get('season');
+  // URL params take priority over everything
+  if (p.has('plan')   && ['non_heating','heating'].includes(p.get('plan')))   plan   = p.get('plan');
+  if (p.has('season') && ['summer','winter'].includes(p.get('season')))       season = p.get('season');
+  if (p.has('usage')  && !isNaN(+p.get('usage')))                             usage  = Math.max(0, +p.get('usage'));
 }
 
-/* ── localStorage cache ──────────────────────────────────────────────── */
+function hasURLParams() {
+  const p = new URLSearchParams(location.search);
+  return p.has('plan') || p.has('season') || p.has('usage');
+}
+
+/* ── localStorage cache ──────────────────────────────────────────── */
 const CACHE_KEY = 'aes_calc_v1';
 
 function saveCache() {
@@ -162,7 +190,7 @@ function loadCache() {
   } catch(_) {}
 }
 
-/* ── Update everything ───────────────────────────────────────────────── */
+/* ── Update everything ───────────────────────────────────────────── */
 function update() {
   const b = calculate(usage, plan, season);
   render(b, usage, plan, season);
@@ -170,7 +198,7 @@ function update() {
   saveCache();
 }
 
-/* ── PDF / Print ──────────────────────────────────────────────────────── */
+/* ── PDF / Print ─────────────────────────────────────────────────── */
 function exportPDF() {
   const b       = calculate(usage, plan, season);
   const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
@@ -183,32 +211,39 @@ function exportPDF() {
 
   const rows = [
     // [label, amount, class]
-    ['AES Ohio Delivery Charges', '', 'section'],
-    ['Customer Charge (per bill)',                  fmt(b.customer_charge), ''],
-    ['Other Delivery Charges', '', 'subsection'],
-    ['Distribution Charge',                         fmt(b.distribution), ''],
-    ['PIPP Rider (previously USF Rider)',            fmt(b.usf_rider), ''],
-    ['Storm Rider (per bill)',                       fmt(b.storm_rider), ''],
-    ['Excise Tax',                                   fmt(b.excise), ''],
-    ['Infrastructure Investment Rider',              fmt(b.infra_rider), ''],
-    ['Transmission Cost Recovery Rider - N',         fmt(b.tcrr_n), ''],
-    ['Tax Savings Credit Rider',                     fmt(b.tax_savings_cr), ''],
-    ['Proactive Reliability Optimization Rider',     fmt(b.proactive_rider), ''],
-    ['Distribution Investment Rider',                fmt(b.dist_invest_rider), ''],
-    ['Regulatory Compliance Rider',                  fmt(b.reg_compliance), ''],
-    ['Other Delivery Charges',                       fmt(b.other_delivery), 'subtotal'],
-    ['AES Ohio Delivery Total',                      fmt(b.delivery_total), 'subtotal'],
-    ['Supply Charges', '', 'section'],
-    [`Standard Offer Rate ($${b.sor_rate.toFixed(6).replace(/0+$/,'')}/kWh)`, fmt(b.supply), ''],
-    ['Supply Total',                                 fmt(b.supply), 'subtotal'],
-    ['TOTAL',                                        fmt(b.total), 'total'],
-    [`Price-To-Compare: $${b.ptc.toFixed(6).replace(/0+$/,'')}/kWh`, fmt(b.supply) + ' (supply)', 'ptc'],
+    ['AES Ohio Delivery Charges',                   '',               'section'],
+    ['Customer Charge (per bill)',                   fmt(b.customer_charge), ''],
+    ['Other Delivery Charges',                       '',               'subsection'],
+    ['Distribution Charge',                          fmt(b.distribution), ''],
+    ['PIPP Rider (previously USF Rider)',             fmt(b.usf_rider), ''],
+    ['Storm Rider (per bill)',                        fmt(b.storm_rider), ''],
+    ['Excise Tax',                                    fmt(b.excise), ''],
+    ['Infrastructure Investment Rider',               fmt(b.infra_rider), ''],
+    ['Transmission Cost Recovery Rider - N',          fmt(b.tcrr_n), ''],
+    ['Tax Savings Credit Rider',                      fmt(b.tax_savings_cr), ''],
+    ['Proactive Reliability Optimization Rider',      fmt(b.proactive_rider), ''],
+    ['Distribution Investment Rider',                 fmt(b.dist_invest_rider), ''],
+    ['Regulatory Compliance Rider',                   fmt(b.reg_compliance), ''],
+    ['Other Delivery Charges',                        fmt(b.other_delivery), 'subtotal'],
+    ['AES Ohio Delivery Total',                       fmt(b.delivery_total), 'subtotal'],
+    ['Supply Charges',                                '',               'section'],
+    [`Standard Offer Rate ${fmtRate(b.sor_rate)}`,   fmt(b.supply), ''],
+    ['Supply Total',                                  fmt(b.supply), 'subtotal'],
+    ['TOTAL',                                         fmt(b.total), 'total'],
+    [`Price-To-Compare: $${b.ptc.toFixed(7).replace(/0+$/,'').replace(/\.$/,'')}/kWh`,
+                                                      fmt(b.supply) + ' supply', 'ptc'],
   ];
 
-  let html = '<table><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
   rows.forEach(([label, amt, cls]) => {
-    if (cls === 'section')    { html += `<tr class="subtotal"><td colspan="2"><strong>${label}</strong></td></tr>`; return; }
-    if (cls === 'subsection') { html += `<tr><td colspan="2" style="padding-top:8px;color:#6b7280;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">${label}</td></tr>`; return; }
+    if (cls === 'section') {
+      html += `<tr class="subtotal"><td colspan="2"><strong>${label}</strong></td></tr>`;
+      return;
+    }
+    if (cls === 'subsection') {
+      html += `<tr><td colspan="2" style="padding-top:8px;color:#6b7280;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">${label}</td></tr>`;
+      return;
+    }
     html += `<tr class="${cls}"><td>${label}</td><td style="text-align:right;font-family:monospace">${amt}</td></tr>`;
   });
   html += '</tbody></table>';
@@ -217,39 +252,42 @@ function exportPDF() {
   window.print();
 }
 
-/* ── Wire up UI ──────────────────────────────────────────────────────── */
+/* ── Wire up UI ──────────────────────────────────────────────────── */
 function initUI() {
-  const planSelect   = $('planSelect');
-  const usageInput   = $('usageInput');
-  const usageSlider  = $('usageSlider');
-  const seasonGroup  = $('seasonGroup');
-  const segBtns      = document.querySelectorAll('.seg-btn');
-  const shareBtn     = $('shareBtn');
-  const shareToast   = $('shareToast');
-  const exportBtn    = $('exportBtn');
-  const themeBtn     = $('themeBtn');
+  const planSelect  = $('planSelect');
+  const usageInput  = $('usageInput');
+  const usageSlider = $('usageSlider');
+  const seasonGroup = $('seasonGroup');
+  const segBtns     = document.querySelectorAll('.seg-btn');
+  const shareBtn    = $('shareBtn');
+  const shareToast  = $('shareToast');
+  const exportBtn   = $('exportBtn');
+  const themeBtn    = $('themeBtn');
 
-  /* --- Plan select --- */
+  /* Plan */
   planSelect.value = plan;
   planSelect.addEventListener('change', () => {
     plan = planSelect.value;
-    const isHeating = (plan === 'heating');
-    seasonGroup.hidden = !isHeating;
+    seasonGroup.hidden = (plan !== 'heating');
     update();
   });
   seasonGroup.hidden = (plan !== 'heating');
 
-  /* --- Season buttons --- */
+  /* Season buttons */
+  function updateSegBtns() {
+    segBtns.forEach(b => b.classList.toggle('active', b.dataset.season === season));
+  }
+  updateSegBtns();
+
   segBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.season === season);
     btn.addEventListener('click', () => {
       season = btn.dataset.season;
-      segBtns.forEach(b => b.classList.toggle('active', b.dataset.season === season));
+      updateSegBtns();
       update();
     });
   });
 
-  /* --- Usage input --- */
+  /* Usage */
   usageInput.value  = usage;
   usageSlider.value = Math.min(usage, +usageSlider.max);
 
@@ -265,35 +303,39 @@ function initUI() {
     update();
   });
 
-  /* --- Share --- */
+  /* Share */
   shareBtn.addEventListener('click', () => {
     const url = new URL(location.href);
-    url.searchParams.set('plan', plan);
-    url.searchParams.set('usage', usage);
+    url.searchParams.delete('plan');
+    url.searchParams.delete('season');
+    url.searchParams.delete('usage');
+    url.searchParams.set('plan',   plan);
     url.searchParams.set('season', season);
+    url.searchParams.set('usage',  usage);
 
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url.toString()).then(() => {
-        shareToast.textContent = 'Link copied!';
-        setTimeout(() => { shareToast.textContent = ''; }, 2500);
-      });
-    } else {
-      // Fallback
+    const copy = str => {
+      if (navigator.clipboard) {
+        return navigator.clipboard.writeText(str);
+      }
       const ta = document.createElement('textarea');
-      ta.value = url.toString();
+      ta.value = str;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
+      return Promise.resolve();
+    };
+
+    copy(url.toString()).then(() => {
       shareToast.textContent = 'Link copied!';
       setTimeout(() => { shareToast.textContent = ''; }, 2500);
-    }
+    });
   });
 
-  /* --- Export --- */
+  /* Export */
   exportBtn.addEventListener('click', exportPDF);
 
-  /* --- Theme --- */
+  /* Theme */
   const savedTheme = localStorage.getItem('aes_theme') || 'light';
   document.body.dataset.theme = savedTheme;
 
@@ -304,7 +346,7 @@ function initUI() {
   });
 }
 
-/* ── Boot ────────────────────────────────────────────────────────────── */
+/* ── Boot ────────────────────────────────────────────────────────── */
 async function boot() {
   try {
     const res = await fetch('data.json');
@@ -314,9 +356,12 @@ async function boot() {
     return;
   }
 
-  // Priority: URL params > localStorage cache > defaults
-  loadCache();
-  readURL();
+  // Priority: URL params > localStorage > defaults (heating + today's season)
+  if (!hasURLParams()) {
+    loadCache();
+  } else {
+    readURL();
+  }
 
   initUI();
   update();
